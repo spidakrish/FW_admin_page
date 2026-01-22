@@ -1,0 +1,21 @@
+{
+  "name": "fw-admin-page",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev:dashboard": "npm run dev --workspace apps/dashboard",
+    "dev:api": "npm run dev --workspace services/api-gateway",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --if-present --workspaces",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5"
+  }
+}

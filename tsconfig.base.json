@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["DOM", "DOM.Iterable", "ES2021"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@fw-admin/shared-ui/*": ["packages/shared-ui/src/*"],
+      "@fw-admin/api-client/*": ["packages/api-client/src/*"],
+      "@fw-admin/shared-ui": ["packages/shared-ui/src/index.ts"],
+      "@fw-admin/api-client": ["packages/api-client/src/index.ts"]
+    }
+  }
+}

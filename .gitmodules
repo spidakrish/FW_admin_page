@@ -1,0 +1,9 @@
+[submodule "external/fw_frontend"]
+	path = external/fw_frontend
+	url = https://github.com/BackPro-AI/fw_frontend.git
+[submodule "external/backend-v2"]
+	path = external/backend-v2
+	url = https://github.com/BackPro-AI/backend-v2.git
+[submodule "external/FW_document_analysis"]
+	path = external/FW_document_analysis
+	url = https://github.com/BackPro-AI/FW_document_analysis.git
