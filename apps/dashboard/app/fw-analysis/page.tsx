@@ -4,15 +4,15 @@ import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
 const environments = [
   {
     label: "Local Dev Server",
-    description: "Proxies to python-demo/web-ui with gateway auth token",
-    href: "https://fw-document-analysis.local",
-    status: "Online"
+    description: "Vite dev server running on your workstation for rapid iteration",
+    href: "http://localhost:5173",
+    status: "Listening"
   },
   {
-    label: "UAT Workspace",
-    description: "Latest clean build for stakeholder sign-off",
-    href: "https://uat.fw-document-analysis.com",
-    status: "Syncing"
+    label: "Local Preview Tunnel",
+    description: "Reuse the same localhost build when exposing it via ngrok/localtunnel",
+    href: "http://localhost:5173",
+    status: "Shareable"
   }
 ];
 

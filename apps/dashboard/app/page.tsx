@@ -5,18 +5,18 @@ const workspaces = [
   {
     title: "Document Analysis Tool",
     description: "Use the internal Frazer Walker analysis tool to upload policies and review structured outputs.",
-    href: "https://fw-document-analysis.local",
+    href: "http://localhost:5173",
     icon: FileText,
     status: "Launch ready",
-    note: "Connector wiring finalises soon"
+    note: "Running locally on port 5173"
   },
   {
     title: "BackPro AI Platform",
     description: "Jump into the platform to ingest compliance evidence, spin up RAG agents, and orchestrate audits end to end.",
-    href: "https://fw-frontend.local",
+    href: "http://localhost:3001",
     icon: Workflow,
     status: "Preview",
-    note: "Remote module federation in progress"
+    note: "Start with: cd fw_frontend && npm run dev"
   }
 ];
 
