@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
+import { serviceUrls, config } from "@/lib/config";
 
 const environments = [
   {
-    label: "Local Dev Server",
-    description: "Vite dev server running on your workstation for rapid iteration",
-    href: "http://localhost:5173",
-    status: "Listening"
+    label: config.isProduction ? "Document Analysis" : "Local Dev Server",
+    description: config.isProduction
+      ? "FW Document Analysis production environment"
+      : "Vite dev server running on your workstation for rapid iteration",
+    href: serviceUrls.fwAnalysis,
+    status: config.isProduction ? "Production" : "Listening"
   },
   {
-    label: "Local Preview Tunnel",
-    description: "Reuse the same localhost build when exposing it via ngrok/localtunnel",
-    href: "http://localhost:5173",
-    status: "Shareable"
+    label: config.isProduction ? "Preview Environment" : "Local Preview Tunnel",
+    description: config.isProduction
+      ? "Preview and staging environment for testing"
+      : "Reuse the same localhost build when exposing it via ngrok/localtunnel",
+    href: serviceUrls.fwAnalysis,
+    status: config.isProduction ? "Staging" : "Shareable"
   }
 ];
 

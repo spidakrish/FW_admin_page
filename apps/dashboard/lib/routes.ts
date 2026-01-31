@@ -1,9 +1,11 @@
+import { serviceUrls } from "./config";
+
 export const routes = [
   { label: "Dashboard", href: "/" },
   {
     label: "Document Analysis Tool",
-    href: "http://localhost:5173",
+    href: serviceUrls.fwAnalysis,
     external: true
   },
-  { label: "Backpro Platform", href: "http://localhost:3001", external: true }
+  { label: "Backpro Platform", href: serviceUrls.backpro, external: true }
 ];

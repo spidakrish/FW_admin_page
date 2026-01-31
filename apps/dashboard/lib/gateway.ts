@@ -1,11 +1,16 @@
 import { cache } from "react";
 import { createGatewayClient } from "@fw-admin/api-client";
+import { serviceUrls } from "./config";
 
 type GatewayHealth = {
-  services: Record<string, string>;
+  status: string;
+  timestamp: string;
+  version: string;
 };
 
-const client = createGatewayClient();
+const client = createGatewayClient({
+  baseUrl: serviceUrls.apiGateway
+});
 
 export const getGatewayHealth = cache(async (): Promise<GatewayHealth | null> => {
   try {

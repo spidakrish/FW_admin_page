@@ -1,22 +1,23 @@
 import Link from "next/link";
 import { FileText, Workflow, ArrowRight } from "lucide-react";
+import { serviceUrls, config } from "@/lib/config";
 
 const workspaces = [
   {
     title: "Document Analysis Tool",
     description: "Use the internal Frazer Walker analysis tool to upload policies and review structured outputs.",
-    href: "http://localhost:5173",
+    href: serviceUrls.fwAnalysis,
     icon: FileText,
     status: "Launch ready",
-    note: "Running locally on port 5173"
+    note: config.isProduction ? "Document analysis service" : "Running locally on port 5173"
   },
   {
     title: "BackPro AI Platform",
     description: "Jump into the platform to ingest compliance evidence, spin up RAG agents, and orchestrate audits end to end.",
-    href: "http://localhost:3001",
+    href: serviceUrls.backpro,
     icon: Workflow,
     status: "Preview",
-    note: "Start with: cd fw_frontend && npm run dev"
+    note: config.isProduction ? "BackPro AI platform" : "Start with: cd fw_frontend && npm run dev"
   }
 ];
 
