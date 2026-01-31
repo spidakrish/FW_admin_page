@@ -1,9 +1,9 @@
 import type { Server } from "http";
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
-import morgan from "morgan";
 import { config } from "./config";
+import { logger, httpLogger, requestIdHeader } from "./lib/logger";
+import { securityHeaders, additionalSecurityHeaders } from "./middleware/security";
 import { apiKeyGuard } from "./middleware/apiKey";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { globalRateLimiter } from "./middleware/rateLimiter";
@@ -16,8 +16,9 @@ const app = express();
 // SECURITY MIDDLEWARE
 // =============================================================================
 
-// Security headers (XSS protection, content type sniffing prevention, etc.)
-app.use(helmet());
+// Security headers (CSP, HSTS, X-Frame-Options, etc.)
+app.use(securityHeaders);
+app.use(additionalSecurityHeaders);
 
 // CORS configuration - restrict origins in production
 app.use(
@@ -25,7 +26,7 @@ app.use(
     origin: config.cors.origins.length > 0 ? config.cors.origins : true,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-fw-admin-key"]
+    allowedHeaders: ["Content-Type", "Authorization", "x-fw-admin-key", "x-request-id"]
   })
 );
 
@@ -46,10 +47,11 @@ app.use(express.urlencoded({ extended: true, limit: config.bodyLimit }));
 // LOGGING
 // =============================================================================
 
-// Environment-aware request logging
-// - Development: colorized, concise output
-// - Production: Apache combined format for log aggregation
-app.use(morgan(config.isProduction ? "combined" : "dev"));
+// Structured request logging with request ID correlation
+app.use(httpLogger);
+
+// Add request ID to response headers for client-side correlation
+app.use(requestIdHeader);
 
 // =============================================================================
 // HEALTH CHECK ENDPOINT
@@ -89,14 +91,17 @@ let server: Server;
 
 function startServer(): void {
   server = app.listen(config.port, () => {
-    console.log(`[INFO] API Gateway listening on :${config.port}`);
-    console.log(`[INFO] Environment: ${config.isProduction ? "production" : "development"}`);
+    logger.info({
+      msg: "API Gateway started",
+      port: config.port,
+      environment: config.isProduction ? "production" : "development"
+    });
   });
 
   // Handle server errors
   server.on("error", (error: NodeJS.ErrnoException) => {
     if (error.code === "EADDRINUSE") {
-      console.error(`[ERROR] Port ${config.port} is already in use`);
+      logger.fatal({ msg: "Port already in use", port: config.port });
       process.exit(1);
     }
     throw error;
@@ -104,17 +109,17 @@ function startServer(): void {
 }
 
 function gracefulShutdown(signal: string): void {
-  console.log(`[INFO] ${signal} received, starting graceful shutdown...`);
+  logger.info({ msg: "Graceful shutdown initiated", signal });
 
   // Stop accepting new connections
   server.close(() => {
-    console.log("[INFO] HTTP server closed");
+    logger.info({ msg: "HTTP server closed" });
     process.exit(0);
   });
 
   // Force shutdown if graceful shutdown takes too long
   setTimeout(() => {
-    console.error("[WARN] Graceful shutdown timed out, forcing exit");
+    logger.warn({ msg: "Graceful shutdown timed out, forcing exit" });
     process.exit(1);
   }, config.shutdownTimeoutMs);
 }
@@ -125,13 +130,13 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 // Handle uncaught exceptions
 process.on("uncaughtException", (error) => {
-  console.error("[FATAL] Uncaught exception:", error);
+  logger.fatal({ msg: "Uncaught exception", err: error });
   gracefulShutdown("uncaughtException");
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
-  console.error("[FATAL] Unhandled rejection at:", promise, "reason:", reason);
+  logger.fatal({ msg: "Unhandled rejection", reason, promise: String(promise) });
   gracefulShutdown("unhandledRejection");
 });
 

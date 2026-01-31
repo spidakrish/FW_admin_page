@@ -2,16 +2,19 @@ import type { ClientRequest } from "http";
 import { Router } from "express";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { config } from "../config";
+import { createChildLogger } from "../lib/logger";
 
 const router = Router();
+const log = createChildLogger({ service: "backpro" });
 
 /**
  * Health check endpoint for backpro service.
  * Properly verifies upstream health status before returning success.
  */
-router.get("/health", async (_req, res) => {
+router.get("/health", async (req, res) => {
   const serviceName = "backpro";
   const healthUrl = new URL("/health", config.services.backpro);
+  const requestLog = req.log ?? log;
 
   try {
     const controller = new AbortController();
@@ -26,7 +29,11 @@ router.get("/health", async (_req, res) => {
 
     // Verify the upstream service actually returned a success status
     if (!response.ok) {
-      console.error(`[HEALTH] ${serviceName} returned status ${response.status}`);
+      requestLog.warn({
+        msg: "Upstream health check failed",
+        service: serviceName,
+        statusCode: response.status
+      });
       return res.status(503).json({
         status: "unhealthy",
         service: serviceName,
@@ -40,7 +47,10 @@ router.get("/health", async (_req, res) => {
     try {
       data = await response.json();
     } catch {
-      console.error(`[HEALTH] ${serviceName} returned invalid JSON`);
+      requestLog.warn({
+        msg: "Upstream returned invalid JSON",
+        service: serviceName
+      });
       return res.status(503).json({
         status: "unhealthy",
         service: serviceName,
@@ -55,17 +65,16 @@ router.get("/health", async (_req, res) => {
       upstream: data
     });
   } catch (error) {
-    // Log full error details server-side for debugging
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const isTimeout = error instanceof Error && error.name === "AbortError";
 
-    console.error(`[HEALTH] ${serviceName} check failed:`, {
+    requestLog.error({
+      msg: "Health check failed",
+      service: serviceName,
       error: errorMessage,
-      url: healthUrl.toString(),
       isTimeout
     });
 
-    // Return generic error to client - don't leak internal details
     return res.status(503).json({
       status: "unhealthy",
       service: serviceName,
@@ -93,10 +102,11 @@ router.use(
         proxyReq.removeHeader("x-fw-admin-key");
       },
       error: (err, _req, res) => {
-        // Log full error server-side
-        console.error("[PROXY] backpro proxy error:", err.message);
+        log.error({
+          msg: "Proxy error",
+          error: err.message
+        });
 
-        // Return generic error to client
         if (res && "status" in res && typeof res.status === "function") {
           res.status(502).json({
             status: "error",

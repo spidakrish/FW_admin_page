@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, ErrorRequestHandler } from "express";
 import { config } from "../config";
+import { logger } from "../lib/logger";
 
 /**
  * Custom error class for API errors with status codes.
@@ -22,19 +23,22 @@ export class ApiError extends Error {
  */
 export const errorHandler: ErrorRequestHandler = (
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  // Log the error for debugging/monitoring
-  console.error("[ERROR]", {
-    name: err.name,
-    message: err.message,
-    stack: config.isProduction ? undefined : err.stack
-  });
+  // Use request-scoped logger if available, otherwise use global logger
+  const log = req.log ?? logger;
 
   // Handle known API errors
   if (err instanceof ApiError) {
+    log.warn({
+      msg: "API error",
+      code: err.code,
+      statusCode: err.statusCode,
+      error: err.message
+    });
+
     res.status(err.statusCode).json({
       status: "error",
       code: err.code,
@@ -45,6 +49,11 @@ export const errorHandler: ErrorRequestHandler = (
 
   // Handle JSON parsing errors
   if (err instanceof SyntaxError && "body" in err) {
+    log.warn({
+      msg: "Invalid JSON in request body",
+      error: err.message
+    });
+
     res.status(400).json({
       status: "error",
       code: "INVALID_JSON",
@@ -52,6 +61,13 @@ export const errorHandler: ErrorRequestHandler = (
     });
     return;
   }
+
+  // Log all other errors as errors (these are unexpected)
+  log.error({
+    msg: "Unhandled error",
+    err,
+    stack: err.stack
+  });
 
   // Handle all other errors
   res.status(500).json({
@@ -66,6 +82,14 @@ export const errorHandler: ErrorRequestHandler = (
  * Must be registered after all other routes.
  */
 export function notFoundHandler(req: Request, res: Response) {
+  const log = req.log ?? logger;
+
+  log.debug({
+    msg: "Route not found",
+    method: req.method,
+    path: req.path
+  });
+
   res.status(404).json({
     status: "error",
     code: "NOT_FOUND",
