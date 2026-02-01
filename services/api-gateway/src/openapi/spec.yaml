@@ -1,0 +1,680 @@
+openapi: 3.0.3
+info:
+  title: FW Admin API Gateway
+  description: |
+    Unified API gateway for Frazer Walker document intelligence platform.
+
+    This gateway provides:
+    - **Health monitoring** for all backend services
+    - **Authenticated proxy** to FW Document Analysis and BackPro AI Platform
+    - **Rate limiting** and security headers
+
+    ## Authentication
+
+    Protected endpoints require the `x-fw-admin-key` header with a valid API key.
+
+    ```bash
+    curl -H "x-fw-admin-key: YOUR_API_KEY" https://api.example.com/api/v1/backpro/health
+    ```
+
+    ## Rate Limiting
+
+    All endpoints are rate limited to 100 requests per minute per IP address.
+    When exceeded, you'll receive a `429 Too Many Requests` response.
+
+  version: 0.1.0
+  contact:
+    name: Frazer Walker Engineering
+    email: engineering@frazerwalker.com
+  license:
+    name: Proprietary
+    url: https://frazerwalker.com/terms
+
+servers:
+  - url: http://localhost:8787
+    description: Local development
+  - url: https://api.fw-data.com
+    description: Production
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: FW Analysis
+    description: Document analysis service proxy
+  - name: BackPro
+    description: BackPro AI platform proxy
+
+paths:
+  # ===========================================================================
+  # HEALTH & MONITORING (Public)
+  # ===========================================================================
+
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      summary: Gateway health check
+      description: |
+        Returns the health status of the API gateway itself.
+        This endpoint is public and does not require authentication.
+      operationId: getGatewayHealth
+      responses:
+        "200":
+          description: Gateway is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GatewayHealthResponse"
+              example:
+                status: ok
+                timestamp: "2026-01-24T10:30:00.000Z"
+                version: "0.1.0"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  /api/v1/services/status:
+    get:
+      tags:
+        - Health
+      summary: All services status
+      description: |
+        Returns aggregated health status of all backend services.
+        Useful for monitoring dashboards and alerting systems.
+
+        This endpoint is public and does not require authentication.
+
+        **Response Status:**
+        - `healthy` - All services operational
+        - `degraded` - One or more services unhealthy
+      operationId: getServicesStatus
+      responses:
+        "200":
+          description: Services status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServicesStatusResponse"
+              examples:
+                allHealthy:
+                  summary: All services healthy
+                  value:
+                    status: healthy
+                    timestamp: "2026-01-24T10:30:00.000Z"
+                    gateway:
+                      status: healthy
+                      version: "0.1.0"
+                    services:
+                      fwAnalysis:
+                        name: fw-analysis
+                        status: healthy
+                        latencyMs: 45
+                      backpro:
+                        name: backpro
+                        status: healthy
+                        latencyMs: 120
+                degraded:
+                  summary: One service unhealthy
+                  value:
+                    status: degraded
+                    timestamp: "2026-01-24T10:30:00.000Z"
+                    gateway:
+                      status: healthy
+                      version: "0.1.0"
+                    services:
+                      fwAnalysis:
+                        name: fw-analysis
+                        status: healthy
+                        latencyMs: 45
+                      backpro:
+                        name: backpro
+                        status: unhealthy
+                        latencyMs: 5000
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+
+  # ===========================================================================
+  # FW ANALYSIS SERVICE (Authenticated)
+  # ===========================================================================
+
+  /api/v1/fw-analysis/health:
+    get:
+      tags:
+        - FW Analysis
+      summary: FW Analysis service health
+      description: |
+        Checks the health of the FW Document Analysis service.
+        Returns detailed upstream health information.
+      operationId: getFwAnalysisHealth
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+              example:
+                status: healthy
+                service: fw-analysis
+                upstream:
+                  status: ok
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/fw-analysis/{path}:
+    get:
+      tags:
+        - FW Analysis
+      summary: Proxy GET request to FW Analysis
+      description: |
+        Proxies any GET request to the FW Document Analysis backend service.
+        The path and query parameters are forwarded as-is.
+      operationId: proxyFwAnalysisGet
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      responses:
+        "200":
+          description: Proxied response from upstream
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Response varies based on upstream endpoint
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      tags:
+        - FW Analysis
+      summary: Proxy POST request to FW Analysis
+      description: |
+        Proxies any POST request to the FW Document Analysis backend service.
+        Request body is forwarded as-is.
+      operationId: proxyFwAnalysisPost
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      requestBody:
+        description: Request body forwarded to upstream
+        content:
+          application/json:
+            schema:
+              type: object
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Document file to analyze
+      responses:
+        "200":
+          description: Proxied response from upstream
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      tags:
+        - FW Analysis
+      summary: Proxy PUT request to FW Analysis
+      operationId: proxyFwAnalysisPut
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Proxied response from upstream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+    delete:
+      tags:
+        - FW Analysis
+      summary: Proxy DELETE request to FW Analysis
+      operationId: proxyFwAnalysisDelete
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      responses:
+        "200":
+          description: Proxied response from upstream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+
+  # ===========================================================================
+  # BACKPRO SERVICE (Authenticated)
+  # ===========================================================================
+
+  /api/v1/backpro/health:
+    get:
+      tags:
+        - BackPro
+      summary: BackPro service health
+      description: |
+        Checks the health of the BackPro AI Platform service.
+        Returns detailed upstream health information.
+      operationId: getBackproHealth
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceHealthResponse"
+              example:
+                status: healthy
+                service: backpro
+                upstream:
+                  status: ok
+                  database: connected
+                  redis: connected
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+
+  /api/v1/backpro/{path}:
+    get:
+      tags:
+        - BackPro
+      summary: Proxy GET request to BackPro
+      description: |
+        Proxies any GET request to the BackPro AI Platform backend.
+        The path and query parameters are forwarded as-is.
+      operationId: proxyBackproGet
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      responses:
+        "200":
+          description: Proxied response from upstream
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      tags:
+        - BackPro
+      summary: Proxy POST request to BackPro
+      description: |
+        Proxies any POST request to the BackPro AI Platform backend.
+        Request body is forwarded as-is.
+      operationId: proxyBackproPost
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      requestBody:
+        description: Request body forwarded to upstream
+        content:
+          application/json:
+            schema:
+              type: object
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Proxied response from upstream
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimitExceeded"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    put:
+      tags:
+        - BackPro
+      summary: Proxy PUT request to BackPro
+      operationId: proxyBackproPut
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Proxied response from upstream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+    delete:
+      tags:
+        - BackPro
+      summary: Proxy DELETE request to BackPro
+      operationId: proxyBackproDelete
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      responses:
+        "200":
+          description: Proxied response from upstream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+    patch:
+      tags:
+        - BackPro
+      summary: Proxy PATCH request to BackPro
+      operationId: proxyBackproPatch
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: "#/components/parameters/ProxyPath"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Proxied response from upstream
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+
+# =============================================================================
+# COMPONENTS
+# =============================================================================
+
+components:
+  # ---------------------------------------------------------------------------
+  # Security Schemes
+  # ---------------------------------------------------------------------------
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-fw-admin-key
+      description: |
+        API key for authentication. Contact Frazer Walker Engineering to obtain a key.
+
+        **Development:** Use `dev` as the API key for local testing.
+
+        **Production:** The `dev` key is disabled in production environments.
+
+  # ---------------------------------------------------------------------------
+  # Parameters
+  # ---------------------------------------------------------------------------
+  parameters:
+    ProxyPath:
+      name: path
+      in: path
+      required: true
+      description: Path to forward to the upstream service
+      schema:
+        type: string
+      example: documents/list
+
+  # ---------------------------------------------------------------------------
+  # Schemas
+  # ---------------------------------------------------------------------------
+  schemas:
+    GatewayHealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - version
+      properties:
+        status:
+          type: string
+          enum: [ok]
+          description: Gateway health status
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+        version:
+          type: string
+          description: Gateway version
+          example: "0.1.0"
+
+    ServicesStatusResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - gateway
+        - services
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+          description: Overall system status
+        timestamp:
+          type: string
+          format: date-time
+        gateway:
+          type: object
+          required:
+            - status
+            - version
+          properties:
+            status:
+              type: string
+              enum: [healthy]
+            version:
+              type: string
+        services:
+          type: object
+          required:
+            - fwAnalysis
+            - backpro
+          properties:
+            fwAnalysis:
+              $ref: "#/components/schemas/ServiceHealth"
+            backpro:
+              $ref: "#/components/schemas/ServiceHealth"
+
+    ServiceHealth:
+      type: object
+      required:
+        - name
+        - status
+        - latencyMs
+      properties:
+        name:
+          type: string
+          description: Service identifier
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        latencyMs:
+          type: integer
+          description: Health check latency in milliseconds
+
+    ServiceHealthResponse:
+      type: object
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        service:
+          type: string
+          description: Service identifier
+        upstream:
+          type: object
+          description: Raw upstream health response
+        code:
+          type: string
+          description: Error code (present when unhealthy)
+        message:
+          type: string
+          description: Error message (present when unhealthy)
+
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - code
+        - message
+      properties:
+        status:
+          type: string
+          enum: [error]
+        code:
+          type: string
+          description: Machine-readable error code
+        message:
+          type: string
+          description: Human-readable error message
+        requestId:
+          type: string
+          format: uuid
+          description: Request correlation ID for debugging
+
+  # ---------------------------------------------------------------------------
+  # Response Templates
+  # ---------------------------------------------------------------------------
+  responses:
+    Unauthorized:
+      description: Authentication required or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missing:
+              summary: Missing API key
+              value:
+                status: error
+                code: MISSING_API_KEY
+                message: API key is required in x-fw-admin-key header
+            invalid:
+              summary: Invalid API key
+              value:
+                status: error
+                code: INVALID_API_KEY
+                message: Invalid API key
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          description: Seconds until rate limit resets
+          schema:
+            type: integer
+        X-RateLimit-Limit:
+          description: Maximum requests per window
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          description: Remaining requests in current window
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: error
+            code: RATE_LIMIT_EXCEEDED
+            message: Too many requests, please try again later
+
+    BadGateway:
+      description: Unable to reach upstream service
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            status: error
+            code: PROXY_ERROR
+            message: Unable to reach upstream service
+
+    ServiceUnavailable:
+      description: Upstream service unhealthy
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            timeout:
+              summary: Health check timed out
+              value:
+                status: unhealthy
+                service: backpro
+                code: TIMEOUT
+                message: Health check timed out
+            connectionFailed:
+              summary: Connection failed
+              value:
+                status: unhealthy
+                service: backpro
+                code: CONNECTION_FAILED
+                message: Unable to connect to upstream service
+            upstreamError:
+              summary: Upstream returned error
+              value:
+                status: unhealthy
+                service: backpro
+                code: UPSTREAM_ERROR
+                message: Upstream service returned an error status

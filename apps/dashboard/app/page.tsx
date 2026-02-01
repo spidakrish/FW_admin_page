@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileText, Workflow, ArrowRight } from "lucide-react";
 import { serviceUrls, config } from "@/lib/config";
+import { ServiceStatus } from "@/components/service-status";
 
 const workspaces = [
   {
@@ -23,7 +24,11 @@ const workspaces = [
 
 export default function DashboardPage() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-10">
+    <div className="mx-auto flex max-w-6xl flex-col gap-8">
+      {/* Service Status Panel */}
+      <ServiceStatus />
+
+      {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl border border-brand-pewter/20 bg-gradient-to-br from-brand-parchment via-white to-brand-mist px-10 py-12 text-brand-charcoal shadow-card">
         <div className="relative z-10 flex flex-col items-center gap-6 text-center">
           <div className="max-w-3xl">
