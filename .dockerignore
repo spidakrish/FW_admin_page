@@ -1,0 +1,74 @@
+# =============================================================================
+# Docker Ignore - Monorepo Root
+# =============================================================================
+# Excludes files from Docker build context to:
+#   1. Speed up builds (smaller context)
+#   2. Prevent sensitive data from being included
+#   3. Avoid overwriting container-built artifacts
+# =============================================================================
+
+# Dependencies - rebuilt inside container
+**/node_modules
+
+# Build outputs - rebuilt inside container
+**/dist
+**/build
+**/.next
+**/out
+
+# Development files
+**/.env
+**/.env.*
+!**/.env.example
+
+# IDE and editor
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+**/.DS_Store
+
+# Test files and coverage
+**/coverage
+**/*.test.ts
+**/*.spec.ts
+**/vitest.config.ts
+**/jest.config.*
+
+# Git
+.git
+.gitignore
+.gitmodules
+
+# External submodules - not needed for container builds
+external
+
+# Documentation (not needed at runtime)
+**/README.md
+**/CHANGELOG.md
+**/docs
+SITREP.md
+infrastructure
+
+# Docker files (prevent recursive context issues)
+**/Dockerfile*
+**/.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github
+
+# Logs
+**/*.log
+**/npm-debug.log*
+
+# TypeScript source maps (if generated)
+**/*.map
+
+# Next.js specific
+**/.next
+**/out
+
+# Dashboard app (not needed for API gateway build)
+# Uncomment if building dashboard separately
+# apps/dashboard

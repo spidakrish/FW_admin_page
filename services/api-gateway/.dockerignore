@@ -1,0 +1,57 @@
+# =============================================================================
+# Docker Ignore - API Gateway
+# =============================================================================
+# Excludes files from Docker build context to:
+#   1. Speed up builds (smaller context)
+#   2. Prevent sensitive data from being included
+#   3. Avoid overwriting container-built artifacts
+# =============================================================================
+
+# Dependencies - rebuilt inside container
+node_modules
+
+# Build outputs - rebuilt inside container
+dist
+
+# Development files
+.env
+.env.*
+!.env.example
+
+# IDE and editor
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Test files and coverage
+tests
+coverage
+*.test.ts
+*.spec.ts
+vitest.config.ts
+
+# Documentation (not needed at runtime)
+README.md
+CHANGELOG.md
+docs
+
+# Git
+.git
+.gitignore
+
+# Docker files (prevent recursive context issues)
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# CI/CD
+.github
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript source maps (if generated)
+*.map

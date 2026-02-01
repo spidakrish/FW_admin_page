@@ -1,0 +1,56 @@
+# =============================================================================
+# Docker Compose - FW Admin Page Local Development
+# =============================================================================
+# Provides containerized local development environment.
+#
+# Usage:
+#   docker compose up              # Start all services
+#   docker compose up api-gateway  # Start only API gateway
+#   docker compose build           # Rebuild images
+#   docker compose down            # Stop and remove containers
+#
+# Note: For full local development, you may still want to run the Next.js
+# dashboard with `npm run dev:dashboard` for hot reload support.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # API Gateway
+  # ---------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: fw-admin-api-gateway
+    ports:
+      - "8787:8787"
+    environment:
+      - NODE_ENV=production
+      - PORT=8787
+      - LOG_LEVEL=info
+      # Service URLs - use host.docker.internal for local services
+      - FW_ANALYSIS_SERVICE_URL=http://host.docker.internal:5173
+      - BACKPRO_SERVICE_URL=http://host.docker.internal:8000
+      # API Keys - override with .env file or environment
+      - FW_ADMIN_API_KEYS=${FW_ADMIN_API_KEYS:-dev-docker-key}
+      # CORS - allow local development origins
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:3001
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); const req = http.request({hostname:'localhost',port:8787,path:'/api/v1/health',timeout:2000}, (res) => process.exit(res.statusCode === 200 ? 0 : 1)); req.on('error', () => process.exit(1)); req.end();"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+# =============================================================================
+# Networks and Volumes (for future expansion)
+# =============================================================================
+# Uncomment when adding database or other services
+#
+# networks:
+#   fw-admin-network:
+#     driver: bridge
+#
+# volumes:
+#   postgres-data:
