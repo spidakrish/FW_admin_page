@@ -1,0 +1,75 @@
+# =============================================================================
+# Dependabot Configuration
+# =============================================================================
+# Automated dependency updates for security patches and version upgrades.
+#
+# Features:
+#   - Weekly npm dependency checks
+#   - Weekly GitHub Actions version checks
+#   - Grouped updates to reduce PR noise
+#   - Automatic labeling for easy triage
+#
+# Reference: https://docs.github.com/en/code-security/dependabot
+# =============================================================================
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # NPM Dependencies
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    # Group minor and patch updates to reduce PR noise
+    groups:
+      production-dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+          - "typescript*"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier*"
+          - "typescript*"
+          - "vitest*"
+        update-types:
+          - "minor"
+          - "patch"
+    labels:
+      - "dependencies"
+      - "npm"
+    # Limit open PRs to avoid overwhelming the team
+    open-pull-requests-limit: 10
+    # Commit message format
+    commit-message:
+      prefix: "chore(deps)"
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"

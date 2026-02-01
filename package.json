@@ -11,9 +11,13 @@
   "scripts": {
     "dev:dashboard": "npm run dev --workspace apps/dashboard",
     "dev:api": "npm run dev --workspace services/api-gateway",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --if-present --workspaces",
     "lint": "npm run lint --if-present --workspaces",
-    "format": "prettier --write ."
+    "test": "npm run test --if-present --workspaces",
+    "test:coverage": "npm run test:coverage --if-present --workspaces",
+    "typecheck": "npm run typecheck --if-present --workspaces && npm run lint --if-present --workspaces",
+    "format": "npx prettier --write .",
+    "format:check": "npx prettier --check ."
   },
   "devDependencies": {
     "prettier": "^3.2.5"

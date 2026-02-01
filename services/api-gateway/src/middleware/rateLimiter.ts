@@ -10,7 +10,7 @@ import { config } from "../config";
 export const globalRateLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   limit: config.rateLimit.maxRequests,
-  standardHeaders: "draft-7", // Use RateLimit-* headers (IETF draft-7)
+  standardHeaders: "draft-7", // Combined RateLimit header per IETF draft-7
   legacyHeaders: false, // Disable X-RateLimit-* headers
   message: {
     status: "error",
