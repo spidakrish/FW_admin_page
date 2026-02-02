@@ -30,6 +30,8 @@ jobs:
         run: npm run build --workspace=apps/dashboard
         env:
           NEXT_PUBLIC_API_GATEWAY_URL: https://fw-admin-api-gateway.blackglacier-c092b83a.australiaeast.azurecontainerapps.io
+          NEXT_PUBLIC_BACKPRO_URL: https://gentle-cliff-01d72ca00.3.azurestaticapps.net
+          NEXT_PUBLIC_FW_ANALYSIS_URL: https://backpro-docextract-dev-processor.blueplant-59e5bec3.australiaeast.azurecontainerapps.io
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
