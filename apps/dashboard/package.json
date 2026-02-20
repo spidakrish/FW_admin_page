@@ -13,13 +13,16 @@
   "dependencies": {
     "@fw-admin/api-client": "^0.1.0",
     "@fw-admin/shared-ui": "^0.1.0",
+    "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
     "lucide-react": "^0.453.0",
     "next": "^14.1.0",
+    "next-auth": "^4.24.11",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.11.17",
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",

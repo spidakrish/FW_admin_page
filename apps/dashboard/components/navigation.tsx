@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "../lib/routes";
+import { UserMenu } from "./user-menu";
 
 export function Navigation() {
   return (
@@ -33,6 +34,7 @@ export function Navigation() {
             </Link>
           ))}
         </nav>
+        <UserMenu />
       </div>
     </header>
   );

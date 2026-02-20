@@ -24,6 +24,7 @@
     "app",
     "components",
     "lib",
+    "types",
     "next.config.mjs",
     "tailwind.config.ts",
     ".next/types/**/*.ts"

@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { FileText, Workflow, ArrowRight } from "lucide-react";
+import { FileText, Workflow } from "lucide-react";
 import { serviceUrls, config } from "@/lib/config";
 import { ServiceStatus } from "@/components/service-status";
+import { LaunchButton } from "@/components/launch-button";
 
 const workspaces = [
   {
@@ -66,16 +66,7 @@ export default function DashboardPage() {
               <p className="mt-4 text-xs font-medium uppercase tracking-[0.35em] text-brand-pewter">
                 {workspace.note}
               </p>
-              <Link
-                href={workspace.href}
-                prefetch={false}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-teal-deep"
-              >
-                Launch tool
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+              <LaunchButton href={workspace.href} />
             </article>
           ))}
         </div>
