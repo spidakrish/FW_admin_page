@@ -1,6 +1,7 @@
 import { FileText, Workflow } from "lucide-react";
 import { serviceUrls, config } from "@/lib/config";
 import { ServiceStatus } from "@/components/service-status";
+import { ContainerControl } from "@/components/container-control";
 import { LaunchButton } from "@/components/launch-button";
 
 const workspaces = [
@@ -27,6 +28,9 @@ export default function DashboardPage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-8">
       {/* Service Status Panel */}
       <ServiceStatus />
+
+      {/* Document Processor Control (admin only) */}
+      <ContainerControl />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl border border-brand-pewter/20 bg-gradient-to-br from-brand-parchment via-white to-brand-mist px-10 py-12 text-brand-charcoal shadow-card">
