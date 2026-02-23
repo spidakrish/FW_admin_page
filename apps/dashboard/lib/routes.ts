@@ -7,5 +7,6 @@ export const routes = [
     href: serviceUrls.fwAnalysis,
     external: true
   },
-  { label: "Backpro Platform", href: serviceUrls.backpro, external: true }
+  { label: "Backpro Platform", href: serviceUrls.backpro, external: true },
+  { label: "Users", href: "/users", adminOnly: true }
 ];

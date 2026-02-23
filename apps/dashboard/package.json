@@ -13,6 +13,7 @@
   "dependencies": {
     "@fw-admin/api-client": "^0.1.0",
     "@fw-admin/shared-ui": "^0.1.0",
+    "@upstash/redis": "^1.36.2",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.0",
     "lucide-react": "^0.453.0",
