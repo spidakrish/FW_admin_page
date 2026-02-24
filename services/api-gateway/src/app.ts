@@ -20,6 +20,7 @@ import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import { globalRateLimiter } from "./middleware/rateLimiter";
 import { fwAnalysisRouter } from "./routes/fwAnalysis";
 import { backproRouter } from "./routes/backpro";
+import { containerRouter } from "./routes/container";
 import { openApiRouter } from "./openapi/index";
 
 /**
@@ -114,6 +115,7 @@ export function createApp(options?: { skipRateLimiter?: boolean }) {
 
   app.use("/api/v1/fw-analysis", apiKeyGuard, fwAnalysisRouter);
   app.use("/api/v1/backpro", apiKeyGuard, backproRouter);
+  app.use("/api/v1/container", apiKeyGuard, containerRouter);
 
   // ===========================================================================
   // ERROR HANDLING

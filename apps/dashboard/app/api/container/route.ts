@@ -1,23 +1,20 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getAzureAccessToken } from "@/lib/azure";
+import { serviceUrls } from "@/lib/config";
 
-const API_VERSION = "2024-03-01";
+/**
+ * Container control proxy — routes through the API Gateway.
+ *
+ * The API Gateway Container App has Managed Identity enabled and
+ * Contributor role on the document processor Container App, so it
+ * can call the Azure Management API without any stored credentials.
+ *
+ * Dashboard (SWA) → API Gateway (Container App + Managed Identity) → Azure Management API
+ */
 
-function getContainerAppUrl(): string {
-  const subscriptionId = process.env.AZURE_SUBSCRIPTION_ID;
-  const resourceGroup = process.env.AZURE_RESOURCE_GROUP;
-  const containerAppName = process.env.AZURE_CONTAINER_APP_NAME;
-
-  if (!subscriptionId || !resourceGroup || !containerAppName) {
-    throw new Error(
-      "Azure Container App not configured. Set AZURE_SUBSCRIPTION_ID, AZURE_RESOURCE_GROUP, and AZURE_CONTAINER_APP_NAME."
-    );
-  }
-
-  return `https://management.azure.com/subscriptions/${subscriptionId}/resourceGroups/${resourceGroup}/providers/Microsoft.App/containerApps/${containerAppName}`;
-}
+const GATEWAY_BASE = serviceUrls.apiGateway;
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY ?? "";
 
 // ---------------------------------------------------------------------------
 // GET /api/container — fetch container app status (admin only)
@@ -30,27 +27,17 @@ export async function GET() {
   }
 
   try {
-    const token = await getAzureAccessToken();
-    const url = `${getContainerAppUrl()}?api-version=${API_VERSION}`;
-
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await fetch(`${GATEWAY_BASE}/api/v1/container/status`, {
+      headers: { "x-fw-admin-key": API_KEY },
       cache: "no-store",
     });
 
     if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Azure API error (${res.status}): ${text}`);
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? `Gateway error (${res.status})`);
     }
 
-    const data = await res.json();
-
-    return NextResponse.json({
-      name: data.name,
-      runningStatus: data.properties?.runningStatus ?? "Unknown",
-      provisioningState: data.properties?.provisioningState ?? "Unknown",
-      location: data.location,
-    });
+    return NextResponse.json(await res.json());
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -85,28 +72,20 @@ export async function POST(request: Request) {
   }
 
   try {
-    const token = await getAzureAccessToken();
-    const url = `${getContainerAppUrl()}/${action}?api-version=${API_VERSION}`;
-
-    const res = await fetch(url, {
+    const res = await fetch(`${GATEWAY_BASE}/api/v1/container/${action}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        "x-fw-admin-key": API_KEY,
         "Content-Type": "application/json",
       },
     });
 
-    // 200 = completed immediately, 202 = accepted (async operation)
-    if (res.status !== 200 && res.status !== 202) {
-      const text = await res.text();
-      throw new Error(`Azure API error (${res.status}): ${text}`);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message ?? `Gateway error (${res.status})`);
     }
 
-    return NextResponse.json({
-      ok: true,
-      action,
-      status: res.status === 202 ? "accepted" : "completed",
-    });
+    return NextResponse.json(await res.json());
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal error";
     return NextResponse.json({ error: message }, { status: 500 });

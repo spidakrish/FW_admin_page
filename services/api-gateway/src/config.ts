@@ -70,7 +70,12 @@ const envSchema = z.object({
   BODY_SIZE_LIMIT: z.string().regex(/^\d+(kb|mb|gb)?$/i).default("1mb"),
 
   // Shutdown configuration
-  SHUTDOWN_TIMEOUT_MS: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().min(1000)).default("10000")
+  SHUTDOWN_TIMEOUT_MS: z.string().regex(/^\d+$/).transform(Number).pipe(z.number().min(1000)).default("10000"),
+
+  // Azure Container App Management (optional — for document processor start/stop)
+  AZURE_SUBSCRIPTION_ID: z.string().optional(),
+  AZURE_RESOURCE_GROUP: z.string().optional(),
+  AZURE_CONTAINER_APP_NAME: z.string().optional()
 });
 
 // =============================================================================
