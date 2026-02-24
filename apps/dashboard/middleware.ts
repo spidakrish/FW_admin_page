@@ -7,8 +7,9 @@ export const config = {
      * - /login
      * - /api/auth (NextAuth endpoints)
      * - /_next (Next.js internals)
+     * - /.swa (Azure Static Web Apps health check)
      * - /favicon.ico, /frazerwalker-logo.svg (static assets)
      */
-    "/((?!login|api/auth|_next|favicon\\.ico|frazerwalker-logo\\.svg).*)",
+    "/((?!login|api/auth|_next|\\.swa|favicon\\.ico|frazerwalker-logo\\.svg).*)",
   ],
 };

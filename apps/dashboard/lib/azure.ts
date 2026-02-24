@@ -2,12 +2,14 @@
  * Azure Management API authentication.
  *
  * Strategy (in priority order):
- *   1. Service Principal (AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET)
- *   2. Static token (AZURE_ACCESS_TOKEN) — e.g. from `az account get-access-token`
+ *   1. Managed Identity (when running on Azure — SWA, App Service, Container Apps)
+ *      Uses IDENTITY_ENDPOINT + IDENTITY_HEADER (Azure SWA) or IMDS endpoint.
+ *   2. Service Principal (AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET)
+ *   3. Static token (AZURE_ACCESS_TOKEN) — for local dev / testing only.
  *
- * For production, use a Service Principal. For local dev/testing, you can set
- * AZURE_ACCESS_TOKEN from the Azure CLI:
- *   az account get-access-token --resource https://management.azure.com --query accessToken -o tsv
+ * For production on Azure SWA, enable Managed Identity in the Azure portal:
+ *   Static Web App → Settings → Identity → System assigned → On
+ *   Then grant it "Contributor" role on the Container App.
  */
 
 interface TokenResponse {
@@ -29,7 +31,35 @@ export async function getAzureAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
-  // Strategy 1: Service Principal (preferred for production)
+  // Strategy 1: Managed Identity (Azure SWA / App Service / Container Apps)
+  const identityEndpoint = process.env.IDENTITY_ENDPOINT;
+  const identityHeader = process.env.IDENTITY_HEADER;
+
+  if (identityEndpoint && identityHeader) {
+    // Azure Static Web Apps / App Service Managed Identity
+    const resource = "https://management.azure.com";
+    const url = `${identityEndpoint}?api-version=2019-08-01&resource=${resource}`;
+
+    const res = await fetch(url, {
+      headers: { "X-IDENTITY-HEADER": identityHeader },
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Managed Identity token request failed (${res.status}): ${text}`);
+    }
+
+    const data: TokenResponse = await res.json();
+
+    cachedToken = {
+      token: data.access_token,
+      expiresAt: now + (data.expires_in - 300) * 1000,
+    };
+
+    return cachedToken.token;
+  }
+
+  // Strategy 2: Service Principal (preferred for non-Azure hosting)
   const tenantId = process.env.AZURE_TENANT_ID;
   const clientId = process.env.AZURE_CLIENT_ID;
   const clientSecret = process.env.AZURE_CLIENT_SECRET;
@@ -65,13 +95,16 @@ export async function getAzureAccessToken(): Promise<string> {
     return cachedToken.token;
   }
 
-  // Strategy 2: Static token from env (for local dev / testing)
+  // Strategy 3: Static token from env (for local dev / testing)
   const staticToken = process.env.AZURE_ACCESS_TOKEN;
   if (staticToken) {
     return staticToken;
   }
 
   throw new Error(
-    "Azure auth not configured. Set either AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET (Service Principal), or AZURE_ACCESS_TOKEN (from az CLI)."
+    "Azure auth not configured. Set either: " +
+    "(1) Enable Managed Identity on Azure SWA, " +
+    "(2) AZURE_TENANT_ID + AZURE_CLIENT_ID + AZURE_CLIENT_SECRET, or " +
+    "(3) AZURE_ACCESS_TOKEN (from az CLI for local dev)."
   );
 }
