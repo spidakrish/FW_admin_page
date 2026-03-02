@@ -89,7 +89,7 @@ jobs:
         run: npm run test:coverage --workspace=services/api-gateway
 
       - name: Upload coverage report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: services/api-gateway/coverage
@@ -129,7 +129,7 @@ jobs:
         run: npm audit --json > audit-report.json || true
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: npm-audit-report
           path: audit-report.json
@@ -165,14 +165,14 @@ jobs:
         run: npm run build
 
       - name: Upload dashboard build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: dashboard-build
           path: apps/dashboard/.next
           retention-days: 7
 
       - name: Upload api-gateway build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: api-gateway-build
           path: services/api-gateway/dist
